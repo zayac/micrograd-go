@@ -1,14 +1,24 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+
+	"github.com/goccy/go-graphviz"
+)
 
 func main() {
-	// Create a new Value
 	v := Value{data: 1.0}
-	// Create another Value
 	v2 := Value{data: 2.0}
-	// Add the two Values together
 	result := v.Add(v2).Mul(v2)
-	// Print the result
 	fmt.Println(result)
+
+	g := graphviz.New()
+	graph, err := Graph(g, result)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := g.RenderFilename(graph, graphviz.PNG, "graph.png"); err != nil {
+		log.Fatal("graphviz graph rendering failed: ", err)
+	}
 }
