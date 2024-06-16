@@ -1,8 +1,8 @@
 module micrograd-go
 
-go 1.22.3
+go 1.22
 
-require github.com/goccy/go-graphviz v0.1.3
+require github.com/emicklei/dot v1.6.2
 
 require (
 	github.com/fogleman/gg v1.3.0 // indirect

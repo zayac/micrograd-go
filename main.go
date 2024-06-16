@@ -3,8 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-
-	"github.com/goccy/go-graphviz"
+	"os"
 )
 
 func main() {
@@ -13,12 +12,14 @@ func main() {
 	result := v.Add(v2).Mul(v2)
 	fmt.Println(result)
 
-	g := graphviz.New()
-	graph, err := Graph(g, result)
+	file, err := os.Create("graph.dot")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error creating file:", err)
 	}
-	if err := g.RenderFilename(graph, graphviz.PNG, "graph.png"); err != nil {
-		log.Fatal("graphviz graph rendering failed: ", err)
+	defer file.Close()
+
+	_, err = file.WriteString(result.Graph().String())
+	if err != nil {
+		log.Fatal("Error writing to file:", err)
 	}
 }

@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/goccy/go-graphviz"
-	"github.com/goccy/go-graphviz/cgraph"
+	"github.com/emicklei/dot"
 )
 
 type op int
@@ -15,6 +13,17 @@ const (
 	AddOp
 	MulOp
 )
+
+func (o op) String() string {
+	switch o {
+	case AddOp:
+		return "+"
+	case MulOp:
+		return "*"
+	default:
+		panic("unknown operation")
+	}
+}
 
 type Value struct {
 	data float64
@@ -42,37 +51,27 @@ func (v Value) Mul(v2 Value) Value {
 	}
 }
 
-func (v Value) buildGraph(graph *cgraph.Graph) (*cgraph.Node, error) {
-	node, err := graph.CreateNode(v.String())
-	if err != nil {
-		return nil, err
+func (v Value) buildGraph(g *dot.Graph) dot.Node {
+	node := g.Node(v.String()).Box()
+	var op dot.Node
+	if v.op != UnknownOp {
+		op = g.Node(v.op.String())
+		g.Edge(op, node)
 	}
 	for _, p := range v.prev {
-		prevNode, err := p.buildGraph(graph)
-		if err != nil {
-			return nil, err
-		}
-		_, err = graph.CreateEdge("", prevNode, node)
-		if err != nil {
-			return nil, err
+		prevNode := p.buildGraph(g)
+		if v.op == UnknownOp {
+			g.Edge(prevNode, node)
+		} else {
+			g.Edge(prevNode, op)
 		}
 	}
-	return node, nil
+	return node
 }
 
-func Graph(g *graphviz.Graphviz, v Value) (*cgraph.Graph, error) {
-	graph, err := g.Graph()
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := g.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	if _, err = v.buildGraph(graph); err != nil {
-		return nil, err
-	}
-	return graph, nil
+func (v Value) Graph() *dot.Graph {
+	g := dot.NewGraph(dot.Directed)
+	g.Attr("rankdir", "LR")
+	v.buildGraph(g)
+	return g
 }
