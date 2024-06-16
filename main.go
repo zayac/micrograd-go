@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	v := Value{data: 1.0}
-	v2 := Value{data: 2.0}
-	result := v.Add(v2).Mul(v2)
+	v := NewValue(5.0, "a")
+	v2 := NewValue(3.0, "b")
+	result := v.Add(v2, "c").Mul(v2, "d")
 	fmt.Println(result)
 
 	file, err := os.Create("graph.dot")

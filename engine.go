@@ -26,47 +26,54 @@ func (o op) String() string {
 }
 
 type Value struct {
-	data float64
-	prev []*Value
-	op   op
+	data, grad float64
+	prev       []*Value
+	op         op
+	label      string
 }
 
-func (v Value) String() string {
-	return fmt.Sprintf("%.2f", v.data)
+func NewValue(data float64, label string) Value {
+	return Value{data: data, label: label}
 }
 
-func (v Value) Add(v2 Value) Value {
+func (v Value) Add(v2 Value, label string) Value {
 	return Value{
-		data: v.data + v2.data,
-		prev: []*Value{&v, &v2},
-		op:   AddOp,
+		data:  v.data + v2.data,
+		prev:  []*Value{&v, &v2},
+		op:    AddOp,
+		label: label,
 	}
 }
 
-func (v Value) Mul(v2 Value) Value {
+func (v Value) Mul(v2 Value, label string) Value {
 	return Value{
-		data: v.data * v2.data,
-		prev: []*Value{&v, &v2},
-		op:   MulOp,
+		data:  v.data * v2.data,
+		prev:  []*Value{&v, &v2},
+		op:    MulOp,
+		label: label,
 	}
 }
 
 func (v Value) buildGraph(g *dot.Graph) dot.Node {
-	node := g.Node(v.String()).Box()
+	node := g.Node(v.label).NewRecordBuilder()
+	node.FieldWithId(v.label, "label")
+	node.FieldWithId(fmt.Sprintf("data %.2f", v.data), "data")
+	node.FieldWithId(fmt.Sprintf("grad %.2f", v.grad), "grad")
+	node.Build()
 	var op dot.Node
 	if v.op != UnknownOp {
 		op = g.Node(v.op.String())
-		g.Edge(op, node)
+		g.Edge(op, g.Node(v.label))
 	}
 	for _, p := range v.prev {
 		prevNode := p.buildGraph(g)
 		if v.op == UnknownOp {
-			g.Edge(prevNode, node)
+			g.Edge(prevNode, g.Node(v.label))
 		} else {
 			g.Edge(prevNode, op)
 		}
 	}
-	return node
+	return g.Node(v.label)
 }
 
 func (v Value) Graph() *dot.Graph {
