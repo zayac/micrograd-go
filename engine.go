@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/emicklei/dot"
 )
@@ -12,6 +13,7 @@ const (
 	UnknownOp op = iota
 	AddOp
 	MulOp
+	TanhOp
 )
 
 func (o op) String() string {
@@ -20,6 +22,8 @@ func (o op) String() string {
 		return "+"
 	case MulOp:
 		return "*"
+	case TanhOp:
+		return "tanh"
 	default:
 		panic("unknown operation")
 	}
@@ -30,28 +34,53 @@ type Value struct {
 	prev       []*Value
 	op         op
 	label      string
+	backward   func()
 }
 
-func NewValue(data float64, label string) Value {
-	return Value{data: data, label: label}
+func NewValue(data float64, label string) *Value {
+	return &Value{data: data, label: label, backward: func() {}}
 }
 
-func (v Value) Add(v2 Value, label string) Value {
-	return Value{
+func (v *Value) Add(v2 *Value, label string) *Value {
+	ret := &Value{
 		data:  v.data + v2.data,
-		prev:  []*Value{&v, &v2},
+		prev:  []*Value{v, v2},
 		op:    AddOp,
 		label: label,
 	}
+	ret.backward = func() {
+		v.grad = ret.grad
+		v2.grad = ret.grad
+	}
+	return ret
 }
 
-func (v Value) Mul(v2 Value, label string) Value {
-	return Value{
+func (v *Value) Mul(v2 *Value, label string) *Value {
+	ret := &Value{
 		data:  v.data * v2.data,
-		prev:  []*Value{&v, &v2},
+		prev:  []*Value{v, v2},
 		op:    MulOp,
 		label: label,
 	}
+	ret.backward = func() {
+		v.grad = v2.data * ret.grad
+		v2.grad = v.data * ret.grad
+	}
+	return ret
+}
+
+func (v *Value) Tanh(label string) *Value {
+	x := v.data
+	ret := &Value{
+		data:  (math.Exp(2*x) - 1) / (math.Exp(2*x) + 1),
+		prev:  []*Value{v},
+		op:    TanhOp,
+		label: label,
+	}
+	ret.backward = func() {
+		v.grad = (1 - ret.data*ret.data) * ret.grad
+	}
+	return ret
 }
 
 func (v Value) buildGraph(g *dot.Graph) dot.Node {
@@ -62,7 +91,7 @@ func (v Value) buildGraph(g *dot.Graph) dot.Node {
 	node.Build()
 	var op dot.Node
 	if v.op != UnknownOp {
-		op = g.Node(v.op.String())
+		op = g.Node(v.label + "_op").Label(v.op.String())
 		g.Edge(op, g.Node(v.label))
 	}
 	for _, p := range v.prev {

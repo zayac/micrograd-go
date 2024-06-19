@@ -8,14 +8,14 @@ import (
 func TestValueAdd(t *testing.T) {
 	tests := []struct {
 		name string
-		v1   Value
-		v2   Value
-		want Value
+		v1   *Value
+		v2   *Value
+		want *Value
 	}{{
 		name: "positive values",
 		v1:   NewValue(5.0, "a"),
 		v2:   NewValue(3.0, "b"),
-		want: Value{
+		want: &Value{
 			data: 8.0,
 			prev: []*Value{
 				{data: 5.0, label: "a"},
@@ -28,7 +28,7 @@ func TestValueAdd(t *testing.T) {
 		name: "negative values",
 		v1:   NewValue(-5.0, "a"),
 		v2:   NewValue(-3.0, "b"),
-		want: Value{
+		want: &Value{
 			data: -8.0,
 			prev: []*Value{
 				{data: -5.0, label: "a"},
@@ -41,7 +41,7 @@ func TestValueAdd(t *testing.T) {
 		name: "zero values",
 		v1:   NewValue(0.0, "a"),
 		v2:   NewValue(0.0, "b"),
-		want: Value{
+		want: &Value{
 			data: 0.0,
 			prev: []*Value{
 				{data: 0.0, label: "a"},
@@ -57,7 +57,7 @@ func TestValueAdd(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.v1.Add(tt.v2, "c")
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Expected %v, but got %v", tt.want, got)
+				t.Errorf("Expected %+v, but got %+v", tt.want, got)
 			}
 		})
 	}
@@ -66,13 +66,13 @@ func TestValueAdd(t *testing.T) {
 func TestValueMul(t *testing.T) {
 	tests := []struct {
 		name         string
-		v1, v2, want Value
+		v1, v2, want *Value
 	}{
 		{
 			name: "positive values",
 			v1:   NewValue(5.0, "a"),
 			v2:   NewValue(3.0, "b"),
-			want: Value{
+			want: &Value{
 				data: 15.0,
 				prev: []*Value{
 					{data: 5.0, label: "a"},
@@ -86,7 +86,7 @@ func TestValueMul(t *testing.T) {
 			name: "negative values",
 			v1:   NewValue(-5.0, "a"),
 			v2:   NewValue(-3.0, "b"),
-			want: Value{
+			want: &Value{
 				data: 15.0,
 				prev: []*Value{
 					{data: -5.0, label: "a"},
@@ -100,7 +100,7 @@ func TestValueMul(t *testing.T) {
 			name: "zero values",
 			v1:   NewValue(0.0, "a"),
 			v2:   NewValue(0.0, "b"),
-			want: Value{
+			want: &Value{
 				data: 0.0,
 				prev: []*Value{
 					{data: 0.0, label: "a"},
@@ -116,7 +116,7 @@ func TestValueMul(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.v1.Mul(tt.v2, "c")
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Expected %v, but got %v", tt.want, got)
+				t.Errorf("Expected %+v, but got %+v", tt.want, got)
 			}
 		})
 	}
