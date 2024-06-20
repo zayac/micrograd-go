@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"slices"
 
 	"github.com/emicklei/dot"
 )
@@ -49,8 +50,8 @@ func (v *Value) Add(v2 *Value, label string) *Value {
 		label: label,
 	}
 	ret.backward = func() {
-		v.grad = ret.grad
-		v2.grad = ret.grad
+		v.grad += ret.grad
+		v2.grad += ret.grad
 	}
 	return ret
 }
@@ -63,8 +64,8 @@ func (v *Value) Mul(v2 *Value, label string) *Value {
 		label: label,
 	}
 	ret.backward = func() {
-		v.grad = v2.data * ret.grad
-		v2.grad = v.data * ret.grad
+		v.grad += v2.data * ret.grad
+		v2.grad += v.data * ret.grad
 	}
 	return ret
 }
@@ -110,4 +111,26 @@ func (v Value) Graph() *dot.Graph {
 	g.Attr("rankdir", "LR")
 	v.buildGraph(g)
 	return g
+}
+
+func (v *Value) Backward() {
+	seen := make(map[*Value]bool)
+	var order []*Value
+	var visitAll func(*Value)
+	visitAll = func(val *Value) {
+		if !seen[val] {
+			seen[val] = true
+			for _, p := range val.prev {
+				visitAll(p)
+			}
+			order = append(order, val)
+		}
+	}
+	visitAll(v)
+	slices.Reverse(order)
+
+	v.grad = 1
+	for _, val := range order {
+		val.backward()
+	}
 }
