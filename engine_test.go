@@ -1,9 +1,21 @@
 package main
 
 import (
-	"reflect"
 	"testing"
 )
+
+func eqValue(v1, v2 *Value) bool {
+	if v1.data != v2.data || v1.grad != v2.grad ||
+		len(v1.prev) != len(v2.prev) || v1.op != v2.op || v1.label != v2.label {
+		return false
+	}
+	for i := range v1.prev {
+		if !eqValue(v1.prev[i], v2.prev[i]) {
+			return false
+		}
+	}
+	return true
+}
 
 func TestValueAdd(t *testing.T) {
 	tests := []struct {
@@ -56,7 +68,7 @@ func TestValueAdd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.v1.Add(tt.v2, "c")
-			if !reflect.DeepEqual(got, tt.want) {
+			if !eqValue(got, tt.want) {
 				t.Errorf("Expected %+v, but got %+v", tt.want, got)
 			}
 		})
@@ -115,7 +127,7 @@ func TestValueMul(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.v1.Mul(tt.v2, "c")
-			if !reflect.DeepEqual(got, tt.want) {
+			if !eqValue(got, tt.want) {
 				t.Errorf("Expected %+v, but got %+v", tt.want, got)
 			}
 		})
