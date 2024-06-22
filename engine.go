@@ -13,18 +13,24 @@ type op int
 const (
 	UnknownOp op = iota
 	AddOp
+	SubOp
 	MulOp
 	TanhOp
+	ReluOp
 )
 
 func (o op) String() string {
 	switch o {
 	case AddOp:
 		return "+"
+	case SubOp:
+		return "-"
 	case MulOp:
 		return "*"
 	case TanhOp:
 		return "tanh"
+	case ReluOp:
+		return "relu"
 	default:
 		panic("unknown operation")
 	}
@@ -56,6 +62,20 @@ func (v *Value) Add(v2 *Value, label string) *Value {
 	return ret
 }
 
+func (v *Value) Sub(v2 *Value, label string) *Value {
+	ret := &Value{
+		data:  v.data + v2.data,
+		prev:  []*Value{v, v2},
+		op:    SubOp,
+		label: label,
+	}
+	ret.backward = func() {
+		v.grad -= ret.grad
+		v2.grad -= ret.grad
+	}
+	return ret
+}
+
 func (v *Value) Mul(v2 *Value, label string) *Value {
 	ret := &Value{
 		data:  v.data * v2.data,
@@ -79,7 +99,26 @@ func (v *Value) Tanh(label string) *Value {
 		label: label,
 	}
 	ret.backward = func() {
-		v.grad = (1 - ret.data*ret.data) * ret.grad
+		v.grad += (1 - ret.data*ret.data) * ret.grad
+	}
+	return ret
+}
+
+func (v *Value) Relu(label string) *Value {
+	var data float64
+	if v.data > 0 {
+		data = v.data
+	}
+	ret := &Value{
+		data:  data,
+		prev:  []*Value{v},
+		op:    ReluOp,
+		label: label,
+	}
+	ret.backward = func() {
+		if ret.data > 0 {
+			v.grad += ret.grad
+		}
 	}
 	return ret
 }
